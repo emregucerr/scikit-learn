@@ -19,6 +19,7 @@ from ..externals import six
 from ..externals.six import moves
 from ..externals.six import string_types
 from ..utils import check_array, as_float_array, check_random_state
+from ..exceptions import ConvergenceWarning
 from ..utils.validation import check_is_fitted
 from ..utils.validation import FLOAT_DTYPES
 
@@ -116,7 +117,7 @@ def _ica_par(X, tol, g, fun_args, max_iter, w_init):
             break
     else:
         warnings.warn('FastICA did not converge. Consider increasing '
-                      'tolerance or the maximum number of iterations.')
+                      'tolerance or the maximum number of iterations.', ConvergenceWarning)
 
     return W, ii + 1
 

@@ -16,6 +16,7 @@ from .base import LinearModel, _pre_fit
 from ..base import RegressorMixin
 from ..utils import as_float_array, check_array, check_X_y
 from ..model_selection import check_cv
+from sklearn.exceptions import ConvergenceWarning
 from ..externals.joblib import Parallel, delayed
 
 solve_triangular_args = {'check_finite': False}
@@ -99,7 +100,7 @@ def _cholesky_omp(X, y, n_nonzero_coefs, tol=None, copy_X=True,
         lam = np.argmax(np.abs(np.dot(X.T, residual)))
         if lam < n_active or alpha[lam] ** 2 < min_float:
             # atom already selected or inner product too small
-            warnings.warn(premature, RuntimeWarning, stacklevel=2)
+            warnings.warn(premature, ConvergenceWarning, stacklevel=2)
             break
 
         if n_active > 0:
@@ -113,7 +114,7 @@ def _cholesky_omp(X, y, n_nonzero_coefs, tol=None, copy_X=True,
             v = nrm2(L[n_active, :n_active]) ** 2
             Lkk = linalg.norm(X[:, lam]) ** 2 - v
             if Lkk <= min_float:  # selected atoms are dependent
-                warnings.warn(premature, RuntimeWarning, stacklevel=2)
+                warnings.warn(premature, ConvergenceWarning, stacklevel=2)
                 break
             L[n_active, n_active] = sqrt(Lkk)
         else:
@@ -226,7 +227,7 @@ def _gram_omp(Gram, Xy, n_nonzero_coefs, tol_0=None, tol=None,
         lam = np.argmax(np.abs(alpha))
         if lam < n_active or alpha[lam] ** 2 < min_float:
             # selected same atom twice, or inner product too small
-            warnings.warn(premature, RuntimeWarning, stacklevel=3)
+            warnings.warn(premature, ConvergenceWarning, stacklevel=3)
             break
         if n_active > 0:
             L[n_active, :n_active] = Gram[lam, :n_active]
@@ -238,7 +239,7 @@ def _gram_omp(Gram, Xy, n_nonzero_coefs, tol_0=None, tol=None,
             v = nrm2(L[n_active, :n_active]) ** 2
             Lkk = Gram[lam, lam] - v
             if Lkk <= min_float:  # selected atoms are dependent
-                warnings.warn(premature, RuntimeWarning, stacklevel=3)
+                warnings.warn(premature, ConvergenceWarning, stacklevel=3)
                 break
             L[n_active, n_active] = sqrt(Lkk)
         else:
