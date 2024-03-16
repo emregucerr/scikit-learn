@@ -534,3 +534,20 @@ def test_one_hot_encoder_warning():
 def test_categorical_encoder_stub():
     from sklearn.preprocessing import CategoricalEncoder
     assert_raises(RuntimeError, CategoricalEncoder, encoding='ordinal')
+import pytest
+
+from sklearn.preprocessing import CategoricalEncoder
+
+
+def test_categorical_encoder_get_feature_names():
+    enc = CategoricalEncoder()
+    enc.fit([['A'], ['B'], ['A'], ['C']])
+    assert enc.get_feature_names() == ['x0_A', 'x0_B', 'x0_C']
+    feature_names = ['feature']
+    assert enc.get_feature_names(feature_names) == ['feature_A', 'feature_B', 'feature_C']
+    
+    # Test ValueError on incorrect `input_features` length
+    with pytest.raises(ValueError):
+        enc.get_feature_names(['feature1'])  # Fewer names than required
+    with pytest.raises(ValueError):
+        enc.get_feature_names(['feature1', 'feature2', 'feature3', 'feature4'])  # More names than required

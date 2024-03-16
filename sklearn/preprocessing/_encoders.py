@@ -575,69 +575,43 @@ class OneHotEncoder(_BaseEncoder):
     def inverse_transform(self, X):
         """Convert the back data to the original representation.
 
-        In case unknown categories are encountered (all zero's in the
-        one-hot encoding), ``None`` is used to represent this category.
+        """
 
+    def get_feature_names(self, input_features=None):
+        """
+        Return feature names for output features.
+        
         Parameters
         ----------
-        X : array-like or sparse matrix, shape [n_samples, n_encoded_features]
-            The transformed data.
-
+        input_features : array of string, shape (n_features,), optional
+            String names for input features if available. By default,
+            "x0", "x1", ... "x{n_features}" is used.
+        
         Returns
         -------
-        X_tr : array-like, shape [n_samples, n_features]
-            Inverse transformed array.
-
+        output_feature_names : list of string, shape (n_output_features,)
+            Array mapping from feature integer indices to feature name.
         """
-        # if self._legacy_mode:
-        #     raise ValueError("only supported for categorical features")
-
         check_is_fitted(self, 'categories_')
-        X = check_array(X, accept_sparse='csr')
+        cats = self.categories_
+        feature_names = []
+        check_is_fitted(self, 'categories_')
+        cats = self.categories_
+        if input_features is None:
+            input_features = ['x%d' % i for i in range(len(cats))]
+        elif len(input_features) != len(self.categories_):
+            raise ValueError("input_features must have length equal to number "
+                             "of features ({}, got {})".format(
+                             len(self.categories_), len(input_features)))
 
-        n_samples, _ = X.shape
-        n_features = len(self.categories_)
-        n_transformed_features = sum([len(cats) for cats in self.categories_])
+        feature_names = []
+        for i, categories_for_feature in enumerate(cats):
+            names_for_feature = [input_features[i] + '_' + str(category)
+                                 for category in categories_for_feature]
+            feature_names.extend(names_for_feature)
+        return feature_names
 
-        # validate shape of passed X
-        msg = ("Shape of the passed X data is not correct. Expected {0} "
-               "columns, got {1}.")
-        if X.shape[1] != n_transformed_features:
-            raise ValueError(msg.format(n_transformed_features, X.shape[1]))
-
-        # create resulting array of appropriate dtype
-        dt = np.find_common_type([cat.dtype for cat in self.categories_], [])
-        X_tr = np.empty((n_samples, n_features), dtype=dt)
-
-        j = 0
-        found_unknown = {}
-
-        for i in range(n_features):
-            n_categories = len(self.categories_[i])
-            sub = X[:, j:j + n_categories]
-
-            # for sparse X argmax returns 2D matrix, ensure 1D array
-            labels = np.asarray(_argmax(sub, axis=1)).flatten()
-            X_tr[:, i] = self.categories_[i][labels]
-
-            if self.handle_unknown == 'ignore':
-                # ignored unknown categories: we have a row of all zero's
-                unknown = np.asarray(sub.sum(axis=1) == 0).flatten()
-                if unknown.any():
-                    found_unknown[i] = unknown
-
-            j += n_categories
-
-        # if ignored are found: potentially need to upcast result to
-        # insert None values
-        if found_unknown:
-            if X_tr.dtype != object:
-                X_tr = X_tr.astype(object)
-
-            for idx, mask in found_unknown.items():
-                X_tr[mask, idx] = None
-
-        return X_tr
+        return feature_names
 
 
 class OrdinalEncoder(_BaseEncoder):
