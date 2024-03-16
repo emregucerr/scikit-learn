@@ -1212,9 +1212,10 @@ class RidgeCV(_BaseRidgeCV, RegressorMixin):
 
     store_cv_values : boolean, default=False
         Flag indicating if the cross-validation values corresponding to
-        each alpha should be stored in the `cv_values_` attribute (see
-        below). This flag is only compatible with `cv=None` (i.e. using
-        Generalized Cross-Validation).
+        each alpha should be stored in the `cv_values_` attribute. This
+        attribute will contain the mean squared errors or the values of the
+        scorer function, depending on the scoring parameter. This flag is
+        only compatible with `cv=None` (i.e., using Generalized Cross-Validation).
 
     Attributes
     ----------
@@ -1304,11 +1305,12 @@ class RidgeClassifierCV(LinearClassifierMixin, _BaseRidgeCV):
     Attributes
     ----------
     cv_values_ : array, shape = [n_samples, n_alphas] or \
-    shape = [n_samples, n_responses, n_alphas], optional
+    shape = [n_samples, n_targets, n_alphas], optional
         Cross-validation values for each alpha (if `store_cv_values=True` and
     `cv=None`). After `fit()` has been called, this attribute will contain \
-    the mean squared errors (by default) or the values of the \
-    `{loss,score}_func` function (if provided in the constructor).
+    the cross-validation scores for each alpha (higher is better) or the \
+    values of the `{loss,score}_func` function (if provided in the constructor), \
+    depending on the scoring parameter.
 
     coef_ : array, shape = [n_features] or [n_targets, n_features]
         Weight vector(s).
@@ -1374,6 +1376,8 @@ class RidgeClassifierCV(LinearClassifierMixin, _BaseRidgeCV):
                              compute_sample_weight(self.class_weight, y))
 
         _BaseRidgeCV.fit(self, X, Y, sample_weight=sample_weight)
+        if self.store_cv_values:
+            self.cv_values_ = self.cv_values_
         return self
 
     @property
