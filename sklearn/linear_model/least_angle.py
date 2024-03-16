@@ -307,14 +307,13 @@ def lars_path(X, y, Xy=None, Gram=None, max_iter=500,
                 # to get early stopping to work consistently on all versions of
                 # Python including 32 bit Python under Windows seems to make it
                 # very difficult to trigger the 'drop for good' strategy.
-                warnings.warn('Regressors in active set degenerate. '
-                              'Dropping a regressor, after %i iterations, '
-                              'i.e. alpha=%.3e, '
-                              'with an active set of %i regressors, and '
-                              'the smallest cholesky pivot element being %.3e.'
-                              ' Reduce max_iter or increase eps parameters.'
-                              % (n_iter, alpha, n_active, diag),
-                              ConvergenceWarning)
+                raise ConvergenceWarning('Regressors in active set degenerate. '
+                                         'Dropping a regressor, after %i iterations, '
+                                         'i.e. alpha=%.3e, '
+                                         'with an active set of %i regressors, and '
+                                         'the smallest cholesky pivot element being %.3e.'
+                                         ' Reduce max_iter or increase eps parameters.'
+                                         % (n_iter, alpha, n_active, diag))
 
                 # XXX: need to figure a 'drop for good' way
                 Cov = Cov_not_shortened
@@ -334,13 +333,12 @@ def lars_path(X, y, Xy=None, Gram=None, max_iter=500,
             # bringing in too much numerical error that is greater than
             # than the remaining correlation with the
             # regressors. Time to bail out
-            warnings.warn('Early stopping the lars path, as the residues '
-                          'are small and the current value of alpha is no '
-                          'longer well controlled. %i iterations, alpha=%.3e, '
-                          'previous alpha=%.3e, with an active set of %i '
-                          'regressors.'
-                          % (n_iter, alpha, prev_alpha, n_active),
-                          ConvergenceWarning)
+            raise ConvergenceWarning('Early stopping the lars path, as the residues '
+                                     'are small and the current value of alpha is no '
+                                     'longer well controlled. %i iterations, alpha=%.3e, '
+                                     'previous alpha=%.3e, with an active set of %i '
+                                     'regressors.'
+                                     % (n_iter, alpha, prev_alpha, n_active))
             break
 
         # least squares solution
