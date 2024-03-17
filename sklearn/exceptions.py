@@ -3,6 +3,8 @@ The :mod:`sklearn.exceptions` module includes all custom warnings and error
 classes used across scikit-learn.
 """
 
+import traceback
+
 __all__ = ['NotFittedError',
            'ChangedBehaviorWarning',
            'ConvergenceWarning',
@@ -98,6 +100,15 @@ class EfficiencyWarning(UserWarning):
 
 class FitFailedWarning(RuntimeWarning):
     """Warning class used if there is an error while fitting the estimator.
+
+    def __init__(self, estimator, score, error):
+        error_message = (
+            f"Estimator fit failed. The score on this train-test "
+            f"partition for these parameters will be set to {score}. "
+            f"Details: \n{type(error).__name__}: {error}"
+        )
+        self.traceback = traceback.format_exc()
+        super(FitFailedWarning, self).__init__(error_message)
 
     This Warning is used in meta estimators GridSearchCV and RandomizedSearchCV
     and the cross-validation helper function cross_val_score to warn when there

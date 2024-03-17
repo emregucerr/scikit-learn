@@ -1393,6 +1393,7 @@ class TfidfVectorizer(CountVectorizer):
             Tf-idf-weighted document-term matrix.
         """
         X = super(TfidfVectorizer, self).fit_transform(raw_documents)
+        X = X.astype(self.dtype)
         self._tfidf.fit(X)
         # X is already a transformed view of raw_documents so
         # we set copy to False
@@ -1421,4 +1422,5 @@ class TfidfVectorizer(CountVectorizer):
         check_is_fitted(self, '_tfidf', 'The tfidf vector is not fitted')
 
         X = super(TfidfVectorizer, self).transform(raw_documents)
+        X = X.astype(self.dtype)
         return self._tfidf.transform(X, copy=False)
