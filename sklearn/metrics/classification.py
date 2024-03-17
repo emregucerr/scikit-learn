@@ -1091,6 +1091,14 @@ def precision_recall_fscore_support(y_true, y_pred, beta=1.0, labels=None,
     else:
         le = LabelEncoder()
         le.fit(labels)
+        # Insert code directly after the le.fit(labels) line
+        if labels is not None:
+            y_true = y_true.take(np.searchsorted(le.classes_, labels), axis=0)
+            y_pred = y_pred.take(np.searchsorted(le.classes_, labels), axis=0)
+            mask = np.ones_like(y_true, dtype=bool)
+            mask[np.searchsorted(le.classes_, labels), y_true] = False
+            y_true = np.ma.array(y_true, mask=mask)
+            y_pred = np.ma.array(y_pred, mask=mask)
         y_true = le.transform(y_true)
         y_pred = le.transform(y_pred)
         sorted_labels = le.classes_
