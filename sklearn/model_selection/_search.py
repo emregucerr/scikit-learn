@@ -12,6 +12,7 @@ from __future__ import division
 #         Raghav RV <rvraghav93@gmail.com>
 # License: BSD 3 clause
 
+import traceback
 from abc import ABCMeta, abstractmethod
 from collections import Mapping, namedtuple, defaultdict, Sequence
 from functools import partial, reduce
@@ -639,13 +640,17 @@ class BaseSearchCV(six.with_metaclass(ABCMeta, BaseEstimator,
           for parameters, (train, test) in product(candidate_params,
                                                    cv.split(X, y, groups)))
 
+        # Initialize the cv_results_ dictionary with fit_failed_traceback key
+        cv_results_['fit_failed_traceback'] = []
         # if one choose to see train score, "out" will contain train score info
         if self.return_train_score:
             (train_score_dicts, test_score_dicts, test_sample_counts, fit_time,
-             score_time) = zip(*out)
+             score_time, fit_failed_tracebacks) = zip(*out)
+            cv_results_['fit_failed_traceback'].extend(fit_failed_tracebacks)
         else:
             (test_score_dicts, test_sample_counts, fit_time,
-             score_time) = zip(*out)
+             score_time, fit_failed_tracebacks) = zip(*out)
+            cv_results_['fit_failed_traceback'].extend(fit_failed_tracebacks)
 
         # test_score_dicts and train_score dicts are lists of dictionaries and
         # we make them into dict of lists
