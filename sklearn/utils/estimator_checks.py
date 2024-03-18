@@ -7,6 +7,7 @@ import traceback
 import pickle
 from copy import deepcopy
 import numpy as np
+from sklearn import ensemble
 from scipy import sparse
 from scipy.stats import rankdata
 import struct
