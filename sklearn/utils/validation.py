@@ -31,18 +31,33 @@ FLOAT_DTYPES = (np.float64, np.float32, np.float16)
 warnings.simplefilter('ignore', NonBLASDotWarning)
 
 
-def _assert_all_finite(X):
-    """Like assert_all_finite, but only for ndarray."""
+def _assert_all_finite(X, allow_nan=False, allow_inf=False):
+    """Like assert_all_finite, but only for ndarray, with added flexibility for NaN and Inf.
+
+    allow_nan : bool, optional (default=False)
+        Whether to allow NaN values in the input.
+
+    allow_inf : bool, optional (default=False)
+        Whether to allow infinity values in the input.
+    """
     if _get_config()['assume_finite']:
+        return  # If assume_finite is set, then validation is skipped
+
+    if allow_nan and allow_inf:
+        return  # If both are allowed, there's nothing to check
+
+    if hasattr(X, 'dtype') and X.dtype.kind in 'fc' and np.isfinite(X.sum()):
         return
-    X = np.asanyarray(X)
-    # First try an O(n) time, O(1) space solution for the common case that
-    # everything is finite; fall back to O(n) space np.isfinite to prevent
-    # false positives from overflow in sum method.
-    if (X.dtype.char in np.typecodes['AllFloat'] and not np.isfinite(X.sum())
-            and not np.isfinite(X).all()):
-        raise ValueError("Input contains NaN, infinity"
-                         " or a value too large for %r." % X.dtype)
+    elif hasattr(X, 'dtype') and X.dtype.kind == 'c':
+        if not allow_nan and np.isnan(X).any():
+            raise ValueError("Input contains NaN")
+        if not allow_inf and (np.isinf(X.real).any() or np.isinf(X.imag).any()):
+            raise ValueError("Input contains Infinity")
+    else:
+        if not allow_nan and np.isnan(X).any():
+            raise ValueError("Input contains NaN")
+        if not allow_inf and np.isinf(X).any():
+            raise ValueError("Input contains Infinity")
 
 
 def assert_all_finite(X):
@@ -70,8 +85,14 @@ def as_float_array(X, copy=True, force_all_finite=True):
         If True, a copy of X will be created. If False, a copy may still be
         returned if X's dtype is not a floating point type.
 
-    force_all_finite : boolean (default=True)
-        Whether to raise an error on np.inf and np.nan in X.
+    force_all_finite : boolean or string, optional (default=True)
+        If True, force all values of array to be finite.
+        If False, allow arrays to have non-finite values, such as NaNs or Infs.
+        If 'allow-nan', only allow NaN values; no Infs will be allowed.
+        If 'allow-inf', only allow Inf values; no NaNs will be allowed.
+
+    if force_all_finite not in [True, False, 'allow-nan', 'allow-inf']:
+        raise ValueError("force_all_finite should be a boolean or 'allow-nan' or 'allow-inf'")
 
     Returns
     -------
@@ -482,8 +503,19 @@ def check_array(array, accept_sparse=False, dtype="numeric", order=None,
         if not allow_nd and array.ndim >= 3:
             raise ValueError("Found array with dim %d. %s expected <= 2."
                              % (array.ndim, estimator_name))
-        if force_all_finite:
-            _assert_all_finite(array)
+        force_all_finite_orig = force_all_finite
+        if isinstance(force_all_finite, str):
+            if force_all_finite == 'allow-nan':
+                force_all_finite = 'allow-nan'
+            elif force_all_finite == 'allow-inf':
+                force_all_finite = 'allow-inf'
+            else:
+                raise ValueError("When force_all_finite is a string, it should be either 'allow-nan' or 'allow-inf'")
+        else:
+            if force_all_finite:
+                force_all_finite = True
+            else:
+                force_all_finite = False
 
     shape_repr = _shape_repr(array.shape)
     if ensure_min_samples > 0:
