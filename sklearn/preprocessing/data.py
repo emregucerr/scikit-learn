@@ -30,6 +30,7 @@ from ..utils.sparsefuncs_fast import (inplace_csr_row_normalize_l1,
 from ..utils.sparsefuncs import (inplace_column_scale,
                                  mean_variance_axis, incr_mean_variance_axis,
                                  min_max_axis)
+from scipy.sparse import issparse
 from ..utils.validation import (check_is_fitted, check_random_state,
                                 FLOAT_DTYPES)
 from .label import LabelEncoder
@@ -1329,7 +1330,7 @@ class PolynomialFeatures(BaseEstimator, TransformerMixin):
         -------
         self : instance
         """
-        n_samples, n_features = check_array(X).shape
+        n_samples, n_features = check_array(X, accept_sparse=True).shape
         combinations = self._combinations(n_features, self.degree,
                                           self.interaction_only,
                                           self.include_bias)
