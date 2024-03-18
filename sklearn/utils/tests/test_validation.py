@@ -446,6 +446,12 @@ def test_check_array_complex_data_error():
     assert_raises_regex(
         ValueError, "Complex data not supported", check_array, X)
 
+def test_check_array_allow_nan():
+    # Test that check_array allows NaN values when force_all_finite='allow-nan'
+    arr_with_nan = np.array([1, 2, np.nan, 4])
+    assert_no_warnings(check_array, arr_with_nan, force_all_finite='allow-nan')
+    assert_raises_regex(ValueError, "Input contains NaN, infinity or a value too large for dtype('float64').", check_array, arr_with_nan, force_all_finite=True)
+
     # list of lists
     X = [[1 + 2j, 3 + 4j, 5 + 7j], [2 + 3j, 4 + 5j, 6 + 7j]]
     assert_raises_regex(
@@ -586,6 +592,37 @@ def test_suppress_validation():
     assert_all_finite(X)
     sklearn.set_config(assume_finite=False)
     assert_raises(ValueError, assert_all_finite, X)
+
+
+def test_check_array_allow_inf():
+    # Test that check_array allows infinity values when force_all_finite='allow-inf'
+    arr_with_inf = np.array([1, 2, np.inf, 4])
+    assert_no_warnings(check_array, arr_with_inf, force_all_finite='allow-inf')
+    assert_raises_regex(ValueError, "Input contains NaN or a value too large for dtype('float64').", check_array, arr_with_inf, force_all_finite=True)
+
+def test_assert_all_finite_allow_nan():
+    # Test that _assert_all_finite allows NaN values when allow_nan=True
+    arr_with_nan = np.array([1, 2, np.nan, 4])
+    assert_no_warnings(_assert_all_finite, arr_with_nan, allow_nan=True)
+    assert_raises_regex(ValueError, "Input contains NaN", _assert_all_finite, arr_with_nan)
+
+def test_assert_all_finite_allow_inf():
+    # Test that _assert_all_finite allows infinity values when allow_inf=True
+    arr_with_inf = np.array([1, 2, np.inf, 4])
+    assert_no_raise(_assert_all_finite, arr_with_inf, allow_inf=True)
+    assert_raise_message(ValueError, "Input contains infinity", _assert_all_finite, arr_with_inf)
+
+def test_check_array_allow_nan_with_inf():
+    # Test that check_array raises an error when array contains both NaN and infinity values
+    # and force_all_finite is set to 'allow-nan'
+    arr_with_nan_inf = np.array([1, 2, np.nan, np.inf])
+    assert_raise_message(ValueError, "Input contains infinity", check_array, arr_with_nan_inf, force_all_finite='allow-nan')
+
+def test_check_array_allow_inf_with_nan():
+    # Test that check_array raises an error when array contains both NaN and infinity values
+    # and force_all_finite is set to 'allow-inf'
+    arr_with_nan_inf = np.array([1, 2, np.nan, np.inf])
+    assert_raise_message(ValueError, "Input contains NaN", check_array, arr_with_nan_inf, force_all_finite='allow-inf')
 
 
 class DummyMemory(object):
