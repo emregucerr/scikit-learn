@@ -25,6 +25,7 @@ detector from various online websites.
 
 from os import listdir, makedirs, remove
 from os.path import join, exists, isdir
+from PIL import Image
 
 import logging
 import numpy as np
@@ -139,15 +140,6 @@ def _load_imgs(file_paths, slice_, color, resize):
 
     # Try to import imread and imresize from PIL. We do this here to prevent
     # the whole sklearn.datasets module from depending on PIL.
-    try:
-        try:
-            from scipy.misc import imread
-        except ImportError:
-            from scipy.misc.pilutil import imread
-        from scipy.misc import imresize
-    except ImportError:
-        raise ImportError("The Python Imaging Library (PIL)"
-                          " is required to load data from jpeg files")
 
     # compute the portion of the images to load to respect the slice_ parameter
     # given by the caller
@@ -181,16 +173,12 @@ def _load_imgs(file_paths, slice_, color, resize):
 
         # Checks if jpeg reading worked. Refer to issue #3594 for more
         # details.
-        img = imread(file_path)
-        if img.ndim is 0:
-            raise RuntimeError("Failed to read the image file %s, "
-                               "Please make sure that libjpeg is installed"
-                               % file_path)
-
-        face = np.asarray(img[slice_], dtype=np.float32)
-        face /= 255.0  # scale uint8 coded colors to the [0.0, 1.0] floats
-        if resize is not None:
-            face = imresize(face, resize)
+        with Image.open(file_path) as img:
+            img = img.crop((slice_[1].start, slice_[0].start, slice_[1].stop, slice_[0].stop))
+            if resize is not None:
+                img = img.resize((w, h), Image.ANTIALIAS)
+            face = np.asarray(img, dtype=np.float32)
+            face /= 255.0  # scale uint8 coded colors to the [0.0, 1.0] floats
         if not color:
             # average the color channels to compute a gray levels
             # representation

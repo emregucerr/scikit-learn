@@ -16,6 +16,7 @@ from collections import namedtuple
 from os import environ, listdir, makedirs
 from os.path import dirname, exists, expanduser, isdir, join, splitext
 import hashlib
+from PIL import Image
 
 from ..utils import Bunch
 from ..utils import check_random_state
@@ -767,16 +768,6 @@ def load_sample_images():
     >>> first_img_data.dtype               #doctest: +SKIP
     dtype('uint8')
     """
-    # Try to import imread from scipy. We do this lazily here to prevent
-    # this module from depending on PIL.
-    try:
-        try:
-            from scipy.misc import imread
-        except ImportError:
-            from scipy.misc.pilutil import imread
-    except ImportError:
-        raise ImportError("The Python Imaging Library (PIL) "
-                          "is required to load data from jpeg files")
     module_path = join(dirname(__file__), "images")
     with open(join(module_path, 'README.txt')) as f:
         descr = f.read()
@@ -784,7 +775,7 @@ def load_sample_images():
                  for filename in os.listdir(module_path)
                  if filename.endswith(".jpg")]
     # Load image data for each image in the source folder.
-    images = [imread(filename) for filename in filenames]
+    images = [np.array(Image.open(filename)) for filename in filenames]
 
     return Bunch(images=images,
                  filenames=filenames,
@@ -827,7 +818,7 @@ def load_sample_image(image_name):
             break
     if index is None:
         raise AttributeError("Cannot find sample image: %s" % image_name)
-    return images.images[index]
+    return np.array(images.images[index])
 
 
 def _pkl_filepath(*args, **kwargs):
